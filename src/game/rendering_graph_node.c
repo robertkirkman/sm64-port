@@ -11,6 +11,11 @@
 #include "shadow.h"
 #include "sm64.h"
 
+#ifdef TARGET_N3DS
+#include "src/pc/gfx/gfx_citro3d.h"
+#include "src/pc/gfx/color_conversion.h"
+#endif
+
 /**
  * This file contains the code that processes the scene graph for rendering.
  * The scene graph is responsible for drawing everything except the HUD / text boxes.
