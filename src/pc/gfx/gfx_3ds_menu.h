@@ -12,6 +12,10 @@
 #include "src/minimap/textures/aa_off_t3x.h"
 #include "src/minimap/textures/resume_t3x.h"
 #include "src/minimap/textures/exit_t3x.h"
+#include "src/minimap/textures/menu_cleft_t3x.h"
+#include "src/minimap/textures/menu_cright_t3x.h"
+#include "src/minimap/textures/menu_cdown_t3x.h"
+#include "src/minimap/textures/menu_cup_t3x.h"
 
 struct gfx_configuration
 {
@@ -24,6 +28,7 @@ extern struct gfx_configuration gfx_config;
 typedef enum {
     DO_NOTHING,
     CONFIG_CHANGED,
+    SHOW_MENU,
     EXIT_MENU
 } menu_action;
 
@@ -31,5 +36,16 @@ void gfx_3ds_menu_init();
 uint32_t gfx_3ds_menu_draw(float *vertex_buffer, int vertex_offset, bool enabled);
 menu_action gfx_3ds_menu_on_touch(int x, int y);
 
+
+static const vertex vertex_list_button_thin[] =
+{
+    { {   0.0f,   0.0f, 0.5f, 1.0f }, { 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } },
+    { {  64.0f,  32.0f, 0.5f, 1.0f }, { 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } },
+    { {  64.0f,   0.0f, 0.5f, 1.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } },
+
+    { {   0.0f,   0.0f, 0.5f, 1.0f }, { 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } },
+    { {   0.0f,  32.0f, 0.5f, 1.0f }, { 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } },
+    { {  64.0f,  32.0f, 0.5f, 1.0f }, { 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }
+};
 
 #endif

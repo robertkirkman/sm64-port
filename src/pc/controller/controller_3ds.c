@@ -1,17 +1,20 @@
 #ifdef TARGET_N3DS
 
-//hack for redefinition of types in libctru
-#define u64 __u64
-#define s64 __s64
-#define u32 __u32
-#define vu32 __vu32
-#define vs32 __vs32
-#define s32 __s32
-#define u16 __u16
-#define s16 __s16
-#define u8 __u8
-#define s8 __s8
+// hack for redefinition of types in libctru
+// All 3DS includes must be done inside of an equivalent
+// #define/undef block to avoid type redefinition issues.
+#define u64 __3ds_u64
+#define s64 __3ds_s64
+#define u32 __3ds_u32
+#define vu32 __3ds_vu32
+#define vs32 __3ds_vs32
+#define s32 __3ds_s32
+#define u16 __3ds_u16
+#define s16 __3ds_s16
+#define u8 __3ds_u8
+#define s8 __3ds_s8
 #include <3ds/types.h>
+#include <3ds.h>
 #undef u64
 #undef s64
 #undef u32
@@ -24,8 +27,6 @@
 #undef s8
 
 #include <ultra64.h>
-
-#include <3ds.h>
 
 #include <stdio.h>
 #include <stdint.h>
@@ -44,6 +45,12 @@ static void set_button_mapping(int index, int mask_n64, int mask_3ds)
     button_mapping[index][1] = mask_n64;
 }
 
+// From gfx_3ds_menu
+static bool is_inside_box(int pos_x, int pos_y, int x, int y, int width, int height)
+{
+    return pos_x >= x && pos_x <= (x+width) && pos_y >= y && pos_y <= (y+height);
+}
+
 static u32 controller_3ds_get_held(void)
 {
     u32 res = 0;
@@ -55,6 +62,19 @@ static u32 controller_3ds_get_held(void)
             res |= button_mapping[i][1];
         }
     }
+
+    touchPosition pos;
+    hidTouchRead(&pos);
+
+    if (is_inside_box(pos.px, pos.py, 170, 122, 64, 64))
+        res |= L_CBUTTONS;
+    if (is_inside_box(pos.px, pos.py, 245, 122, 64, 64))
+        res |= R_CBUTTONS;
+    if (is_inside_box(pos.px, pos.py, 207, 197, 64, 32))
+        res |= D_CBUTTONS;
+    if (is_inside_box(pos.px, pos.py, 207, 79, 64, 32))
+        res |= U_CBUTTONS;
+
     return res;
 }
 

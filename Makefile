@@ -23,8 +23,6 @@ TARGET_N64 ?= 0
 TARGET_WEB ?= 0
 # Build for Nintendo 3DS
 TARGET_N3DS ?= 1
-# Enable experimental 3D mode?
-ENABLE_N3DS_3D_MODE ?= 0
 # Compiler to use (ido or gcc)
 COMPILER ?= ido
 
@@ -217,7 +215,9 @@ else
   EXE := $(BUILD_DIR)/$(TARGET).exe
   else
     ifeq ($(TARGET_N3DS),1)
-    EXE := $(BUILD_DIR)/$(TARGET).3dsx
+      EXE := $(BUILD_DIR)/$(TARGET).3dsx
+      ELF := $(BUILD_DIR)/$(TARGET).elf
+      CIA := $(BUILD_DIR)/$(TARGET).cia
     else
     EXE := $(BUILD_DIR)/$(TARGET)
     endif
@@ -238,7 +238,9 @@ ASM_DIRS := lib
 ifeq ($(TARGET_N64),1)
   ASM_DIRS := asm $(ASM_DIRS)
 else
-  SRC_DIRS := $(SRC_DIRS) src/pc src/pc/gfx src/pc/audio src/pc/controller
+  SRC_DIRS := $(SRC_DIRS) src/pc src/pc/gfx src/pc/gfx/multi_viewport src/pc/audio src/pc/controller
+  # If this is enabled, you can do ASM debugging on these files.
+  # SRC_DIRS := $(SRC_DIRS) src/pc/mixer_implementations
   ASM_DIRS :=
 endif
 BIN_DIRS := bin bin/$(VERSION)
@@ -277,7 +279,11 @@ else
 ifeq ($(TARGET_WEB),1)
   OPT_FLAGS := -O2 -g4 --source-map-base http://localhost:8080/
 else
+ifeq ($(TARGET_N3DS),1)
+  OPT_FLAGS := -O3
+else
   OPT_FLAGS := -O2
+endif
 endif
 endif
 
@@ -495,10 +501,33 @@ ifeq ($(TARGET_N3DS),1)
   CTRULIB := $(DEVKITPRO)/libctru
   LIBDIRS := $(CTRULIB)
   export LIBPATHS  :=  $(foreach dir,$(LIBDIRS),-L$(dir)/lib)
-  PLATFORM_CFLAGS  := -mtp=soft -DTARGET_N3DS -DARM11 -DosGetTime=n64_osGetTime -D_3DS -march=armv6k -mtune=mpcore -mfloat-abi=hard -mword-relocations -fomit-frame-pointer -ffast-math $(foreach dir,$(LIBDIRS),-I$(dir)/include)
+  PLATFORM_CFLAGS  := -mtp=soft -DTARGET_N3DS -DARM11 -DosGetTime=n64_osGetTime -D_3DS -D__3DS__ -march=armv6k -mtune=mpcore -mfloat-abi=hard -mword-relocations -fomit-frame-pointer -ffast-math $(foreach dir,$(LIBDIRS),-I$(dir)/include)
   PLATFORM_LDFLAGS := $(LIBPATHS) -lcitro3d -lctru -lm -specs=3dsx.specs -g -marm -mthumb-interwork -march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
   ifeq ($(DISABLE_AUDIO),1)
     PLATFORM_CFLAGS += -DDISABLE_AUDIO
+  endif
+  ifeq ($(ENABLE_N3DS_FRAMESKIP),1)
+    PLATFORM_CFLAGS += -DENABLE_N3DS_FRAMESKIP
+  endif
+endif
+
+# RSP Audio Emulation flags
+ifneq ($(TARGET_N64),1)
+
+  # Reference RSPA is the original implementation from the PC port.
+  # Enhanced RSPA is an N64-incompatible ehnancement that bypasses some redundancy.
+  ifeq ($(FORCE_REFERENCE_RSPA),1)
+    PLATFORM_CFLAGS += -DRSPA_USE_REFERENCE_IMPLEMENTATION
+  else
+    ifneq ($(DISABLE_ENHANCED_RSPA),1)
+      PLATFORM_CFLAGS += -DRSPA_USE_ENHANCEMENTS
+    endif
+  endif
+
+  # Accurate rounding for audio, which is practically identical, but faster.
+  # Support depends on which mixer implementation is used.
+  ifeq ($(AUDIO_USE_ACCURATE_MATH),1)
+    PLATFORM_CFLAGS += -DAUDIO_USE_ACCURATE_MATH
   endif
 endif
 
@@ -540,10 +569,6 @@ endif
 
 CC_CHECK := $(CC) -fsyntax-only -fsigned-char $(INCLUDE_CFLAGS) -Wall -Wextra -Wno-format-security -D_LANGUAGE_C $(VERSION_CFLAGS) $(MATCH_CFLAGS) $(PLATFORM_CFLAGS) $(GFX_CFLAGS) $(GRUCODE_CFLAGS)
 CFLAGS := $(OPT_FLAGS) $(INCLUDE_CFLAGS) -D_LANGUAGE_C $(VERSION_CFLAGS) $(MATCH_CFLAGS) $(PLATFORM_CFLAGS) $(GFX_CFLAGS) $(GRUCODE_CFLAGS) $(MARCH_FLAGS) -fno-strict-aliasing -fwrapv
-
-ifeq ($(ENABLE_N3DS_3D_MODE),1)
-  CFLAGS += -DENABLE_N3DS_3D_MODE
-endif
 
 ASFLAGS := -I include -I $(BUILD_DIR) $(VERSION_ASFLAGS)
 
@@ -590,6 +615,10 @@ ifeq ($(COMPARE),1)
 endif
 else
 all: $(EXE)
+endif
+
+ifeq ($(TARGET_N3DS),1)
+cia: $(CIA)
 endif
 
 clean:
@@ -658,7 +687,7 @@ ALL_DIRS := $(BUILD_DIR) $(addprefix $(BUILD_DIR)/,$(SRC_DIRS) $(ASM_DIRS) $(GOD
 
 ifeq ($(TARGET_N3DS),1)
   # create build dir for .t3x etc
-  ALL_DIRS += $(BUILD_DIR)/$(MINIMAP_TEXTURES)
+  ALL_DIRS += $(BUILD_DIR)/$(MINIMAP_TEXTURES) $(BUILD_DIR)/3ds
 endif
 
 # Make sure build directory exists before compiling anything
@@ -889,11 +918,17 @@ $(BUILD_DIR)/src/pc/gfx/shader.shbin.o : src/pc/gfx/shader.v.pica
 SMDH_TITLE ?= Super Mario 64
 SMDH_DESCRIPTION ?= Super Mario 64 3DS Port
 SMDH_AUTHOR ?= mkst
-SMDH_ICON := icon.smdh
+SMDH_ICON := 3ds/icon.smdh
 
-$(EXE): $(O_FILES) $(MIO0_FILES:.mio0=.o) $(SOUND_OBJ_FILES) $(ULTRA_O_FILES) $(GODDARD_O_FILES) $(BUILD_DIR)/src/pc/gfx/shader.shbin.o $(MINIMAP_O) $(SMDH_ICON)
-	$(LD) -L $(BUILD_DIR) -o $@.elf $(O_FILES) $(BUILD_DIR)/src/pc/gfx/shader.shbin.o $(MINIMAP_O) $(MINIMAP_T3X_O) $(SOUND_OBJ_FILES) $(ULTRA_O_FILES) $(GODDARD_O_FILES) $(LDFLAGS)
-	3dsxtool $@.elf $@ --smdh=$(BUILD_DIR)/$(SMDH_ICON)
+$(ELF): $(O_FILES) $(MIO0_FILES:.mio0=.o) $(SOUND_OBJ_FILES) $(ULTRA_O_FILES) $(GODDARD_O_FILES) $(BUILD_DIR)/src/pc/gfx/shader.shbin.o $(MINIMAP_O) $(SMDH_ICON)
+	$(LD) -L $(BUILD_DIR) -o $@ $(O_FILES) $(BUILD_DIR)/src/pc/gfx/shader.shbin.o $(MINIMAP_O) $(MINIMAP_T3X_O) $(SOUND_OBJ_FILES) $(ULTRA_O_FILES) $(GODDARD_O_FILES) $(LDFLAGS)
+
+$(EXE): $(ELF)
+	3dsxtool $< $@ --smdh=$(BUILD_DIR)/$(SMDH_ICON)
+
+$(CIA): $(ELF)
+	@echo "Generating $@, please wait..."
+	makerom -f cia -o "$@" -rsf 3ds/template.rsf -target t -elf "$<" -icon 3ds/icon.icn -banner 3ds/banner.bnr
 
 # stolen from /opt/devkitpro/devkitARM/base_tools
 define bin2o

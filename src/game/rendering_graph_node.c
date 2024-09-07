@@ -11,6 +11,11 @@
 #include "shadow.h"
 #include "sm64.h"
 
+#ifdef TARGET_N3DS
+#include "src/pc/gfx/gfx_citro3d.h"
+#include "src/pc/gfx/color_conversion.h"
+#endif
+
 /**
  * This file contains the code that processes the scene graph for rendering.
  * The scene graph is responsible for drawing everything except the HUD / text boxes.
@@ -516,8 +521,8 @@ static void geo_process_background(struct GraphNodeBackground *node) {
     if (list != 0) {
         geo_append_display_list((void *) VIRTUAL_TO_PHYSICAL(list), node->fnNode.node.flags >> 8);
     } else if (gCurGraphNodeMasterList != NULL) {
-#ifndef F3DEX_GBI_2E
-        Gfx *gfxStart = alloc_display_list(sizeof(Gfx) * 7);
+#ifdef TARGET_N3DS
+        Gfx *gfxStart = alloc_display_list(sizeof(Gfx) * 12);
 #else
         Gfx *gfxStart = alloc_display_list(sizeof(Gfx) * 8);
 #endif
@@ -526,13 +531,13 @@ static void geo_process_background(struct GraphNodeBackground *node) {
         gDPPipeSync(gfx++);
         gDPSetCycleType(gfx++, G_CYC_FILL);
         gDPSetFillColor(gfx++, node->background);
-#ifdef ENABLE_N3DS_3D_MODE
+#ifdef TARGET_N3DS
         gDPForceFlush(gfx++);
         gDPSet2d(gfx++, 1);
 #endif
         gDPFillRectangle(gfx++, GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(0), BORDER_HEIGHT,
         GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(0) - 1, SCREEN_HEIGHT - BORDER_HEIGHT - 1);
-#ifdef ENABLE_N3DS_3D_MODE
+#ifdef TARGET_N3DS
         gDPForceFlush(gfx++);
         gDPSet2d(gfx++, 0);
 #endif

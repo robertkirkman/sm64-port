@@ -16,6 +16,7 @@
 #ifndef TARGET_N64
 // Avoid Z-fighting
 #define find_floor_height_and_data 0.4 + find_floor_height_and_data
+#define find_water_level -1.4 + find_water_level
 #endif
 
 /**

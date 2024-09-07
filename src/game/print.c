@@ -26,7 +26,7 @@ struct TextLabel {
 struct TextLabel *sTextLabels[52];
 s16 sTextLabelsCount = 0;
 
-#ifdef ENABLE_N3DS_3D_MODE
+#ifdef TARGET_N3DS
 struct TextLabel *sPressStart[52]; // separates "press start" text from render_text_labels general
 s16 sPressStartCount = 0;
 #endif
@@ -287,7 +287,7 @@ void print_text_centered(s32 x, s32 y, const char *str) {
     sTextLabelsCount++;
 }
 
-#ifdef ENABLE_N3DS_3D_MODE
+#ifdef TARGET_N3DS
 /** Separate function for "PRESS START" text, basically a copy of print_text_centered **/
 void print_press_start(s32 x, s32 y, const char *str) {
     char c = 0;
@@ -494,14 +494,14 @@ void render_text_labels(void) {
     sTextLabelsCount = 0;
 }
 
-#ifdef ENABLE_N3DS_3D_MODE
+#ifdef TARGET_N3DS
 /** Renders "press start", basically a copy of render_text_labels **/
 void render_press_start(void) {
 
     if (sPressStartCount == 0) {
         return;
     }
-    
+
     s32 i;
     s32 j;
     s8 glyphIndex;
@@ -531,7 +531,7 @@ void render_press_start(void) {
 
         mem_pool_free(gEffectsMemoryPool, sPressStart[i]);
     }
-    
+
     gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
     sPressStartCount = 0;
 }

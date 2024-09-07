@@ -198,11 +198,11 @@ Gfx *geo_exec_cake_end_screen(s32 callContext, struct GraphNode *node, UNUSED f3
     Gfx *displayList = NULL;
     Gfx *displayListHead = NULL;
 
-#ifdef ENABLE_N3DS_3D_MODE
+#ifdef TARGET_N3DS
     if (callContext == GEO_CONTEXT_RENDER) {
         displayList = alloc_display_list(5 * sizeof(*displayList));
         displayListHead = displayList;
-        
+
         generatedNode->fnNode.node.flags = (generatedNode->fnNode.node.flags & 0xFF) | 0x100;
         gDPForceFlush(displayListHead++);
         gDPSet2d(displayListHead++, 1);

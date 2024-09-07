@@ -9,6 +9,7 @@ RUN apt-get update && \
       pkg-config \
       python3 \
       wget \
+      unzip \
       zlib1g-dev
 
 RUN wget https://github.com/devkitPro/pacman/releases/download/v1.0.2/devkitpro-pacman.amd64.deb \
@@ -18,6 +19,13 @@ RUN wget https://github.com/devkitPro/pacman/releases/download/v1.0.2/devkitpro-
   rm devkitpro.deb
 RUN dkp-pacman -Syu 3ds-dev --noconfirm
 
+RUN wget https://github.com/3DSGuy/Project_CTR/releases/download/makerom-v0.17/makerom-v0.17-ubuntu_x86_64.zip \
+  -O makerom.zip && \
+  echo 976c17a78617e157083a8e342836d35c47a45940f9d0209ee8fd210a81ba7bc0  makerom.zip | sha256sum --check && \
+  unzip -d /opt/devkitpro/tools/bin/ makerom.zip && \
+  chmod +x /opt/devkitpro/tools/bin/makerom && \
+  rm makerom.zip
+
 RUN mkdir /sm64
 WORKDIR /sm64
 
@@ -26,5 +34,4 @@ ENV DEVKITPRO=/opt/devkitpro
 ENV DEVKITARM=/opt/devkitpro/devkitARM
 ENV DEVKITPPC=/opt/devkitpro/devkitPPC
 
-CMD echo 'usage: docker run --rm --mount type=bind,source="$(pwd)",destination=/sm64 sm64 make VERSION=${VERSION:-us} -j4\n' \
-         'see https://github.com/n64decomp/sm64/blob/master/README.md for advanced usage'
+CMD echo 'usage: docker run --rm --mount type=bind,source="$(pwd)",destination=/sm64 sm64 make VERSION=${VERSION:-us} -j4'

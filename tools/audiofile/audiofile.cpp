@@ -10184,7 +10184,7 @@ static const TrackSetup _af_default_tracksetup =
 {
 	0,
 	{
-		44100.0,
+		32728.5,
 		AF_SAMPFMT_TWOSCOMP,
 		16,
 		_AF_BYTEORDER_NATIVE,

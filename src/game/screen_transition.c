@@ -62,7 +62,7 @@ Vtx *vertex_transition_color(struct WarpTransitionData *transData, u8 alpha) {
 s32 dl_transition_color(s8 fadeTimer, u8 transTime, struct WarpTransitionData *transData, u8 alpha) {
     Vtx *verts = vertex_transition_color(transData, alpha);
 
-#ifdef ENABLE_N3DS_3D_MODE
+#ifdef TARGET_N3DS
         gDPForceFlush(gDisplayListHead++);
         gDPSet2d(gDisplayListHead++, 1);
 #endif
@@ -74,7 +74,7 @@ s32 dl_transition_color(s8 fadeTimer, u8 transTime, struct WarpTransitionData *t
         gSPDisplayList(gDisplayListHead++, dl_draw_quad_verts_0123);
         gSPDisplayList(gDisplayListHead++, dl_screen_transition_end);
     }
-#ifdef ENABLE_N3DS_3D_MODE
+#ifdef TARGET_N3DS
         gDPForceFlush(gDisplayListHead++);
         gDPSet2d(gDisplayListHead++, 0);
 #endif
@@ -182,7 +182,7 @@ s32 render_textured_transition(s8 fadeTimer, s8 transTime, struct WarpTransition
     s16 texTransRadius = calc_tex_transition_radius(fadeTimer, transTime, transData);
     Vtx *verts = alloc_display_list(8 * sizeof(*verts));
 
-#ifdef ENABLE_N3DS_3D_MODE
+#ifdef TARGET_N3DS
     gDPForceFlush(gDisplayListHead++);
     gDPSet2d(gDisplayListHead++, 1);
 #endif
@@ -215,7 +215,7 @@ s32 render_textured_transition(s8 fadeTimer, s8 transTime, struct WarpTransition
         sTransitionTextureFadeCount[fadeTimer] += transData->texTimer;
     } else {
     }
-#ifdef ENABLE_N3DS_3D_MODE
+#ifdef TARGET_N3DS
     gDPForceFlush(gDisplayListHead++);
     gDPSet2d(gDisplayListHead++, 0);
 #endif
@@ -274,7 +274,7 @@ Gfx *render_cannon_circle_base(void) {
         make_vertex(verts, 3, 0, SCREEN_HEIGHT, -1, -1152, 192, 0, 0, 0, 255);
 
 #ifdef WIDESCREEN
-#ifdef ENABLE_N3DS_3D_MODE
+#ifdef TARGET_N3DS
         make_vertex(verts, 4, GFX_DIMENSIONS_FROM_LEFT_EDGE(0) - 16, 0, -1, 0, 0, 0, 0, 0, 255);
         make_vertex(verts, 5, GFX_DIMENSIONS_FROM_RIGHT_EDGE(0) + 16, 0, -1, 0, 0, 0, 0, 0, 255);
         make_vertex(verts, 6, GFX_DIMENSIONS_FROM_RIGHT_EDGE(0) + 16, SCREEN_HEIGHT, -1, 0, 0, 0, 0, 0, 255);
@@ -318,7 +318,7 @@ Gfx *geo_cannon_circle_base(s32 callContext, struct GraphNode *node, UNUSED Mat4
     if (callContext == GEO_CONTEXT_RENDER && gCurrentArea != NULL
         && gCurrentArea->camera->mode == CAMERA_MODE_INSIDE_CANNON) {
         graphNode->fnNode.node.flags = (graphNode->fnNode.node.flags & 0xFF) | 0x500;
-#ifdef ENABLE_N3DS_3D_MODE
+#ifdef TARGET_N3DS
         gDPSetIod(gDisplayListHead++, iodCannon);
 #endif
         dlist = render_cannon_circle_base();
